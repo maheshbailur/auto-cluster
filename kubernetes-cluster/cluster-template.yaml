@@ -1,0 +1,119 @@
+apiVersion: kops/v1alpha2
+kind: Cluster
+metadata:
+  name: {{.kubernetes_cluster_name.value}}
+spec:
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  configBase: s3://{{.kops_s3_bucket.value}}/{{.kubernetes_cluster_name.value}}
+  sshKeyName: aws-terraform-key
+  # Create one etcd member per AZ
+  etcdClusters:
+  - etcdMembers:
+  {{- range .availability_zones.value}}
+  {{- range .}}
+    - instanceGroup: master-{{.}}
+      name: {{. | replace $.region.value "" }}
+  {{- end}}
+  {{- end}}
+    name: main
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  kubernetesVersion: 1.25.0
+  masterPublicName: api.{{.kubernetes_cluster_name.value}}
+  networkCIDR: {{.vpc_cidr_block.value}}
+  networkID: {{.vpc_id.value}}
+  networking:
+    canal: {}
+  nonMasqueradeCIDR: 100.64.0.0/10
+  subnets:
+  # Public (utility) subnets, one per AZ
+  {{- range .public_subnet_ids.value}}
+  {{- range $i, $id := .}}
+  - id: {{index $id}}
+    name: utility-{{index $.availability_zones.value 0 $i}}
+    type: Utility
+    zone: {{index $.availability_zones.value 0 $i}}
+  {{- end}}
+  {{- end}}
+  # Private subnets, one per AZ
+  {{- range .private_subnet_ids.value}}
+  {{- range $i, $id := .}}
+  - id: {{index $id}}
+    name: {{index $.availability_zones.value 0 $i}}
+    type: Private
+    zone: {{index $.availability_zones.value 0 $i}}
+  {{- end}}
+  {{- end}}
+  topology:
+    dns:
+      type: Public
+    masters: private
+    nodes: private
+  bastion:
+    enabled: true
+---
+
+# Create one master per AZ
+{{- range .availability_zones.value}}
+{{- range $i, $zone := .}}
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: {{$.kubernetes_cluster_name.value}} 
+  name: master-{{index $zone }}
+spec:
+  image: ami-0430580de6244e02e
+  kubernetesVersion: 1.25.0
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  role: Master
+  rootVolumeSize: 20
+  subnets:
+  - {{$zone}}
+---
+{{- end}}
+{{- end}}
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: {{.kubernetes_cluster_name.value}}
+  name: nodes
+spec:
+  image: ami-0430580de6244e02e
+  kubernetesVersion: 1.25.0
+  machineType: t2.micro
+  maxSize: 2
+  minSize: 1
+  role: Node
+  rootVolumeSize: 8
+  subnets:
+  {{- range .availability_zones.value}}
+  {{- range $i, $zone := .}}
+   - {{$zone}}
+  {{- end}}
+  {{- end}}
+---
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: {{.kubernetes_cluster_name.value}}
+  name: bastions
+spec:
+  image: ami-0430580de6244e02e
+  kubernetesVersion: 1.25.0
+  machineType: t3.micro
+  maxSize: 1
+  minSize: 1
+  role: Bastion
+  rootVolumeSize: 8 
+  subnets:
+  - utility-us-east-2a
