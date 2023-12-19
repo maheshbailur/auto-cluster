@@ -14,6 +14,10 @@ output "vpc_cidr_block" {
   value = "${module.dev_vpc.vpc_cidr_block}"
 }
 
+output "key_name" {
+  value = "${local.key_name}"
+}
+
 // Public Subnets
 
 output "public_subnet_ids" {
