@@ -54,6 +54,10 @@ output "common_http_sg_id" {
   value = "${aws_security_group.k8s_common_http.id}"
 }
 
+output "bastion_host_sg" {
+  value = "${aws_security_group.bastion_host_sg.id}"
+}
+
 // Needed for kops
 
 output "kops_s3_bucket" {

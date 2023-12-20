@@ -12,7 +12,7 @@ terraform {
 
 resource "aws_key_pair" "cluster-key" {
   key_name   = "${local.key_name}"
-  public_key = file(~/.ssh/id_rsa.pub)
+  public_key = file("~/.ssh/id_rsa.pub")
 }
 
 locals {

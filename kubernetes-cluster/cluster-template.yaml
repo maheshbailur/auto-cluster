@@ -8,7 +8,7 @@ spec:
   channel: stable
   cloudProvider: aws
   configBase: s3://{{.kops_s3_bucket.value}}/{{.kubernetes_cluster_name.value}}
-  sshKeyName: aws-terraform-key
+  sshKeyName: {{.key_name.value}}
   # Create one etcd member per AZ
   etcdClusters:
   - etcdMembers:
@@ -53,8 +53,9 @@ spec:
       type: Public
     masters: private
     nodes: private
-  bastion:
+  bastion: {}
     enabled: true
+  }
 ---
 
 # Create one master per AZ
@@ -114,6 +115,7 @@ spec:
   maxSize: 1
   minSize: 1
   role: Bastion
-  rootVolumeSize: 8 
+  rootVolumeSize: 8
+  securityGroupOverride: {{.bastion_host_sg.value}}
   subnets:
   - utility-us-east-2a
