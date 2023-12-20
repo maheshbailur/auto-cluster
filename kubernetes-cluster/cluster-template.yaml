@@ -53,9 +53,9 @@ spec:
       type: Public
     masters: private
     nodes: private
-  bastion: {}
-    enabled: true
-  }
+    bastions: public
+  bastion:
+    enabled: false
 ---
 
 # Create one master per AZ

@@ -24,7 +24,6 @@ resource "aws_security_group" "bastion_host_sg" {
   vpc_id      = "${module.dev_vpc.vpc_id}"
   name        = "${local.environment}_k8s_bastion_sg"
   description = "Sec Grp for bastion to allow ssh"
-  tags        = "${merge(local.tags)}"
   
   egress {
     from_port   = 0
@@ -37,6 +36,6 @@ resource "aws_security_group" "bastion_host_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.MYIP]
+    cidr_blocks = ["100.10.10.10/32"]
   }
 }
