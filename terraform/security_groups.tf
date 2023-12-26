@@ -21,8 +21,8 @@ resource "aws_security_group" "k8s_common_http" {
 
 //Used to allow access to the bastion host
 resource "aws_security_group" "bastion_host_sg" {
-  vpc_id      = "${module.dev_vpc.vpc_id}"
   name        = "${local.environment}_k8s_bastion_sg"
+  vpc_id      = "${module.dev_vpc.vpc_id}"  
   description = "Sec Grp for bastion to allow ssh"
   
   egress {
