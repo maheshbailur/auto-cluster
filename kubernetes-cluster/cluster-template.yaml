@@ -50,13 +50,11 @@ spec:
   {{- end}}
   topology:
     dns:
-      type: Public
+      type: none
     masters: private
     nodes: private
   bastion:
-    enabled: true
-    loadBalancer:
-      type: "None"
+    enabled: false
 ---
 
 # Create one master per AZ
@@ -103,20 +101,23 @@ spec:
   {{- end}}
   {{- end}}
 ---
-apiVersion: kops/v1alpha2
-kind: InstanceGroup
-metadata:
-  labels:
-    kops.k8s.io/cluster: {{.kubernetes_cluster_name.value}}
-  name: bastions
-spec:
-  image: ami-0430580de6244e02e
-  kubernetesVersion: 1.25.0
-  machineType: t3.micro
-  maxSize: 1
-  minSize: 1
-  role: Bastion
-  rootVolumeSize: 8
-  securityGroupOverride: {{.bastion_host_sg.value}}
-  subnets:
-  - utility-us-east-2a
+- name: Creating Bastion Host
+  ec2:
+    key_name: {{.key_name.value}}
+    region: {{.region.value}}
+    instance_type: t3.micro
+    image: ami-0430580de6244e02e
+    wait: yes
+    wait_timeout: 300
+    instance_tags:
+      Name: "Bastion_host"
+      Project: Vprofile
+      Owner: DevOps Team
+    exact_count: 1
+    count_tag:
+      Name: "Bastion_host"
+      Project: Vprofile
+      Owner: DevOps Team
+    group_id: "{{.bastion_host_sg.value}}"
+    vpc_subnet_id: "utility-us-east-2a"
+  register: bastionHost_out
